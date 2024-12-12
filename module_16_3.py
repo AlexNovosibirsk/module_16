@@ -6,21 +6,12 @@ from fastapi import Path
 from fastapi import HTTPException
 
 app = FastAPI()
-users = {'1': 'Имя: Дима, возраст: 18'}
-# users = {'1': 'Имя: Дима, возраст: 18',
-#          '2': 'Имя: Пётр, возраст: 19',
-#          '3': 'Имя: Вася, возраст: 20'}
-
-keys = [int(key) for key in users.keys()]
-if keys:
-    new_key = str(max(keys) + 1)
-else:
-    new_key = "1"
-print(new_key)
-
+users = {'1': 'Имя: Дима, возраст: 18',
+         '2': 'Имя: Пётр, возраст: 19',
+         '3': 'Имя: Вася, возраст: 20'}
 # 1. Read (GET):
-@app.get("/users")
-async def get_users():
+@app.get("/")  # http:/127.0.0.1:8000/
+async def get_main_page() -> dict:
     return users
 
 
@@ -30,46 +21,32 @@ async def post_user(
         username: Annotated[str, Path(min_length=5, max_length=20, description="Enter username", example="UrbanUser")],
         age: Annotated[int, Path(ge=18, le=120, description="Enter age", example=34)]):
 
-
-
-    # new_id = max( int(user for user in users.get()))
-
-    pass
-
-    # new_id = max(task["id"] for task in tasks) + 1 if tasks else 1
-    # new_task = {"id": new_id, "description": description}
-    # tasks.append(new_task)
-    # return new_task
+    new_index = str(len(users) + 1)
+    users.update({new_index: f"Имя: {username}, возраст: {age}"})
+    return users
 
 
 # 3. Update (PUT):
 @app.put("/users/{user_id}/{username}/{age}")
-async def update_user(user_id: int, username: str, age: int):
-    pass
-    # for task in tasks:
-    #     if task["id"] == task_id:
-    #         task["description"] = description
-    #         return task
-    # raise HTTPException(status_code=404, detail="Задача не найдена")
+async def update_user(user_id: str, username: str, age: int):
+    for key, _ in users.items():
+        if key == user_id:
+            users.update({user_id: f"Имя: {username}, возраст: {age}"})
+            break
+        else:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return users
 
 
 # 4. Delete (DELETE):
 @app.delete("/users/{user_id}")
-async def delete_user(user_id: int):
-    pass
-    # for i, task in enumerate(tasks):
-    #     if task["id"] == task_id:
-    #         del tasks[i]
-    #         return {"detail": "Задача удалена"}
-    # raise HTTPException(status_code=404, detail="Задача не найдена")
-
-# @app.get("/tasks/{task_id}")
-# async def get_task(task_id: int):
-#     pass
-# for task in tasks:
-#     if task["id"] == task_id:
-#         return task
-# raise HTTPException(status_code=404, detail="Задача не найдена")
-
+async def delete_user(user_id: str):
+    for key, _ in users.items():
+        if key == user_id:
+            users.pop(user_id)
+            break
+        else:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return users
 
 # uvicorn module_16_3:app --reload
