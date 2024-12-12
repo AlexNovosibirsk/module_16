@@ -9,9 +9,10 @@ app = FastAPI()
 users = {'1': 'Имя: Дима, возраст: 18',
          '2': 'Имя: Пётр, возраст: 19',
          '3': 'Имя: Вася, возраст: 20'}
+
 # 1. Read (GET):
 @app.get("/")  # http:/127.0.0.1:8000/
-async def get_main_page() -> dict:
+async def get_users() -> dict:
     return users
 
 
@@ -19,34 +20,38 @@ async def get_main_page() -> dict:
 @app.post("/users/{username}/{age}")
 async def post_user(
         username: Annotated[str, Path(min_length=5, max_length=20, description="Enter username", example="UrbanUser")],
-        age: Annotated[int, Path(ge=18, le=120, description="Enter age", example=34)]):
+        age: Annotated[int, Path(ge=18, le=100, description="Enter age", example=34)]) -> str:
 
-    new_index = str(len(users) + 1)
-    users.update({new_index: f"Имя: {username}, возраст: {age}"})
-    return users
+    if users:
+        keys_digit = [int(key_char) for key_char, _ in users.items()]
+        user_id = str(max(keys_digit) + 1)
+    else:
+        user_id = '1'
+
+    users.update({user_id: f"Имя: {username}, возраст: {age}"})
+    return f"User {user_id} is registered"
 
 
 # 3. Update (PUT):
 @app.put("/users/{user_id}/{username}/{age}")
-async def update_user(user_id: str, username: str, age: int):
+async def update_user(user_id: str,
+        username: Annotated[str, Path(min_length=5, max_length=20, description="Enter username", example="UrbanUser")],
+        age: Annotated[int, Path(ge=18, le=100, description="Enter age", example=34)]) -> str:
     for key, _ in users.items():
         if key == user_id:
             users.update({user_id: f"Имя: {username}, возраст: {age}"})
-            break
-        else:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
-    return users
+            return f"User {user_id} has been updated"
+    raise HTTPException(status_code=404, detail="user not found")
 
 
 # 4. Delete (DELETE):
 @app.delete("/users/{user_id}")
 async def delete_user(user_id: str):
-    for key, _ in users.items():
-        if key == user_id:
-            users.pop(user_id)
-            break
-        else:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
-    return users
+    try:
+        users.pop(user_id)
+    except KeyError as err:
+        raise HTTPException(status_code=404, detail=f"user not found, KeyError {err}")
+    return f"User {user_id} has been deleted"
+
 
 # uvicorn module_16_3:app --reload
