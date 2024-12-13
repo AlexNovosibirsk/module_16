@@ -1,58 +1,51 @@
 # Задача "Модель пользователя":
 
 from fastapi import FastAPI
-from typing import Annotated
-from fastapi import Path
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 from typing import List
 
 app = FastAPI()
 
-class Task(BaseModel):
+
+class User(BaseModel):
     id: int
-    description: str
-    is_completed: bool
-class TaskCreate(BaseModel):
-    description: str = Field(..., min_length=5, max_length=100, description="Описание задачи")
-    is_completed: bool = False
-
-# Инициализируем список задач с явной типизацией
-tasks: List[Task] = [Task(id=1, description="Пример задачи", is_completed=False),
-                     Task(id="2", description="Пример задачи", is_completed=False)]
+    username: str
+    age: int
 
 
-@app.get("/tasks", response_model=List[Task])
-async def get_tasks():
-    return tasks
+users: List = [User(id=1, username="ASD", age=22)]
 
 
-@app.post("/tasks", response_model=Task)
-async def create_task(task: TaskCreate):
-    new_id = max((t.id for t in tasks), default=0) + 1
-    new_task = Task(id=new_id, description=task.description, is_completed=task.is_completed)
-    tasks.append(new_task)
-    return new_task
+@app.get("/users", response_model=List[User])
+async def get_users():
+    return users
 
 
-@app.put("/tasks/{task_id}", response_model=Task)
-async def update_task(task_id: int, task: TaskCreate):
-    for t in tasks:
-        if t.id == task_id:
-            t.description = task.description
-            t.is_completed = task.is_completed
-            return t
-    raise HTTPException(status_code=404, detail="Задача не найдена")
+@app.post("/user/{username}/{age}", response_model=User)
+async def create_user(username, age):
+    new_id = max((user.id for user in users), default=0) + 1
+    new_user = User(id=new_id, username=username, age=age)
+    users.append(new_user)
+    return new_user
 
 
-@app.delete("/tasks/{task_id}", response_model=dict)
-async def delete_task(task_id: int):
-    for i, t in enumerate(tasks):
-        if t.id == task_id:
-            del tasks[i]
-            return {"detail": "Задача удалена"}
-    raise HTTPException(status_code=404, detail="Задача не найдена")
+@app.put("/user/{user_id}/{username}/{age}", response_model=User)
+async def update_task(user_id: int, username: str, age: int):
+    for user in users:
+        if user.id == user_id:
+            user.username = username
+            user.age = age
+            return user
+    raise HTTPException(status_code=404, detail="User was not found")
+
+
+@app.delete("/user/{user_id}", response_model=User)
+async def delete_task(user_id: int):
+    for i, user in enumerate(users):
+        if user.id == user_id:
+            del users[i]
+            return user
+    raise HTTPException(status_code=404, detail="User was not found")
 
 # uvicorn module_16_4:app --reload
-
-
